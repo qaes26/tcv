@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تلفاز نور</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&family=Amiri:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #111;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cairo', sans-serif;
+            overflow: hidden;
+        }
+
+        /* الشاشة العملاقة */
+        .tv-frame {
+            width: 95%;
+            height: 75vh; /* تأخذ 75% من ارتفاع الصفحة */
+            background-color: black;
+            border: 10px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screen-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0; /* مخفية حتى التشغيل */
+            transition: opacity 0.5s ease;
+            background-size: cover;
+            background-position: center;
+            padding: 20px;
+        }
+
+        /* صندوق النص لضمان الوضوح التام */
+        .text-box {
+            background-color: rgba(0, 0, 0, 0.6); /* خلفية سوداء نصف شفافة */
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            max-width: 90%;
+        }
+
+        h1 {
+            font-size: 4rem; /* خط ضخم */
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        p {
+            font-size: 2rem;
+            color: #eee;
+            font-family: 'Amiri', serif;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        /* الريموت الأفقي */
+        .remote-bar {
+            margin-top: 20px;
+            background-color: #222;
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            border: 2px solid #444;
+        }
+
+        button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            color: white;
+            background-color: #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: scale(0.9);
+        }
+
+        /* ألوان الأزرار */
+        .btn-power {
+            background-color: #d32f2f; /* أحمر */
+            margin-left: 20px; /* مسافة فاصلة */
+        }
+        .btn-power.on {
+            background-color: #388e3c; /* أخضر */
+            box-shadow: 0 0 10px #388e3c;
+        }
+
+        .btn-channel {
+            background-color: #555;
+        }
+        .btn-channel:hover {
+            background-color: #777;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 10px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        /* تحسينات للجوال */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            p { font-size: 1.5rem; }
+            .remote-bar { gap: 8px; padding: 10px; width: 95%; justify-content: center; }
+            button { width: 40px; height: 40px; font-size: 1rem; }
+            .btn-power { margin-left: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- إطار الشاشة -->
+    <div class="tv-frame">
+        <!-- الشعار عند الإطفاء -->
+        <div id="off-screen" class="absolute text-gray-700 text-3xl font-bold tracking-widest">
+            NOOR TV
+        </div>
+
+        <!-- محتوى الشاشة -->
+        <div id="screen-content" class="screen-content">
+            <!-- سيتم وضع الكلام هنا -->
+        </div>
+    </div>
+
+    <!-- الريموت الأفقي -->
+    <div class="remote-bar">
+        <button id="btn-power" class="btn-power" onclick="togglePower()">⏻</button>
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 5px;"></div>
+        <button class="btn-channel" onclick="setChannel(1)">1</button>
+        <button class="btn-channel" onclick="setChannel(2)">2</button>
+        <button class="btn-channel" onclick="setChannel(3)">3</button>
+        <button class="btn-channel" onclick="setChannel(4)">4</button>
+        <button class="btn-channel" onclick="setChannel(5)">5</button>
+        <button class="btn-channel" onclick="setChannel(6)">6</button>
+        <button class="btn-channel" onclick="setChannel(7)">7</button>
+    </div>
+
+    <div class="signature">من إعداد قيس جازي</div>
+
+    <script>
+        let isOn = false;
+        
+        // بيانات القنوات: خلفية + عنوان + نص
+        const channels = [
+            { id: 1, bg: '#1a237e', title: 'أهلاً يا نور', text: 'نورُ البيتِ ونورُ القلب' },
+            { id: 2, bg: '#004d40', title: 'يا قمر', text: 'وجهكِ يبعث الأمل في الروح' },
+            { id: 3, bg: '#880e4f', title: 'كالورد', text: 'كل زهرة في البستان تغار منكِ' },
+            { id: 4, bg: '#01579b', title: 'عيونك', text: 'في عينيكِ سحرٌ يخطف القلوب' },
+            { id: 5, bg: '#4a148c', title: 'أميرتي', text: 'أنتِ الأميرة في قصة حياتي' },
+            { id: 6, bg: '#212121', title: 'شعر', text: 'نورٌ أطلَّ على الحياةِ فأزهرت' },
+            { id: 7, bg: '#b71c1c', title: 'أحبكِ', text: 'يا أغلى ما في الوجود' }
+        ];
+
+        const screenContent = document.getElementById('screen-content');
+        const offScreen = document.getElementById('off-screen');
+        const powerBtn = document.getElementById('btn-power');
+
+        function togglePower() {
+            isOn = !isOn;
+            if (isOn) {
+                // تشغيل
+                powerBtn.classList.add('on');
+                offScreen.style.display = 'none';
+                screenContent.style.opacity = '1';
+                setChannel(1); // ابدأ بالقناة 1
+            } else {
+                // إطفاء
+                powerBtn.classList.remove('on');
+                screenContent.style.opacity = '0';
+                setTimeout(() => {
+                    offScreen.style.display = 'block';
+                }, 500);
+            }
+        }
+
+        function setChannel(num) {
+            if (!isOn) return; // لا تعمل إذا التلفاز مطفأ
+
+            const ch = channels.find(c => c.id === num);
+            
+            // تغيير الخلفية والنص
+            screenContent.style.backgroundColor = ch.bg;
+            
+            // بناء HTML بسيط وواضح
+            screenContent.innerHTML = `
+                <div class="text-box">
+                    <h1>${ch.title}</h1>
+                    <p>${ch.text}</p>
+                    <div style="font-size: 3rem; margin-top: 20px;">
+                        ${getIcon(num)}
+                    </div>
+                </div>
+            `;
+        }
+
+        // دالة مساعدة لرموز القنوات
+        function getIcon(id) {
+            if(id==1) return '👑';
+            if(id==2) return '🌕';
+            if(id==3) return '🌹';
+            if(id==4) return '👁️';
+            if(id==5) return '🏰';
+            if(id==6) return '📜';
+            if(id==7) return '❤️';
+            return '';
+        }
+    </script>
+</body>
+</html>
+
